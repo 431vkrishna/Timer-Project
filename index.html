@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Alert Timer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f1a;
+            --card: #1a1a2e;
+            --accent: #00d4ff;
+            --text: #e0e0ff;
+            --text-light: #a0a0cc;
+            --danger: #ff3366;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #16213e 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 3rem 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid rgba(0, 212, 255, 0.15);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #00d4ff, #0099cc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: var(--text-light);
+            margin-bottom: 2rem;
+            font-size: 1.05rem;
+        }
+
+        .input-group {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 16px;
+            color: var(--text);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.2);
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent), #0099cc);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .timer-display {
+            margin: 2.5rem 0;
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .status {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-top: 1rem;
+            min-height: 1.5rem;
+        }
+
+        .finished {
+            color: #ff3366;
+            font-weight: 600;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        footer {
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            opacity: 0.8;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+            h1 {
+                font-size: 1.9rem;
+            }
+            .timer-display {
+                font-size: 3.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Countdown Timer</h1>
+        <p>Enter seconds and start the timer</p>
+
+        <div class="input-group">
+            <input type="number" id="secondsInput" placeholder="60" min="1" max="3600">
+        </div>
+
+        <button class="btn" id="startBtn">Start Timer</button>
+
+        <div class="timer-display" id="display">00:00</div>
+        <div class="status" id="status"></div>
+
+        <footer>Made with <span style="color:#ff3366">♥</span> using Web APIs</footer>
+    </div>
+
+    <script>
+        const input = document.getElementById('secondsInput');
+        const startBtn = document.getElementById('startBtn');
+        const display = document.getElementById('display');
+        const status = document.getElementById('status');
+
+        let countdown;
+        let totalSeconds = 0;
+        let alertSound;
+
+        const beep = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
+        beep.volume = 0.7;
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        function showNotification() {
+            if (Notification.permission === "granted") {
+                new Notification("Timer Finished!", {
+                    body: "Your countdown has reached zero.",
+                    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2300d4ff'/></svg>"
+                });
+            }
+        }
+
+        function playAlert() {
+            beep.currentTime = 0;
+            beep.play().catch(() => {});
+        }
+
+        function startTimer() {
+            if (countdown) clearInterval(countdown);
+
+            const inputVal = parseInt(input.value);
+            if (!inputVal || inputVal <= 0) {
+                status.textContent = "Please enter a valid number of seconds";
+                status.style.color = "var(--danger)";
+                return;
+            }
+
+            totalSeconds = inputVal;
+            display.textContent = formatTime(totalSeconds);
+            status.textContent = "Timer running...";
+            status.style.color = "var(--text-light)";
+            startBtn.textContent = "Stop Timer";
+            startBtn.style.background = "linear-gradient(135deg, #ff3366, #cc0033)";
+            input.disabled = true;
+
+            countdown = setInterval(() => {
+                totalSeconds--;
+                display.textContent = formatTime(totalSeconds);
+
+                if (totalSeconds <= 0) {
+                    clearInterval(countdown);
+                    display.textContent = "00:00";
+                    status.textContent = "Timer finished!";
+                    status.classList.add("finished");
+                    startBtn.textContent = "Start Again";
+                    startBtn.style.background = "linear-gradient(135deg, var(--accent), #0099cc)";
+                    input.disabled = false;
+
+                    showNotification();
+                    playAlert();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (countdown) {
+                clearInterval(countdown);
+                countdown = null;
+            }
+            startBtn.textContent = "Start Timer";
+            startBtn.style.background = "linear-gradient(135deg, var(--accent), #0099cc)";
+            input.disabled = false;
+            status.textContent = "Timer stopped";
+            status.style.color = "var(--danger)";
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (countdown) {
+                stopTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !countdown) {
+                startTimer();
+            }
+        });
+
+        if (Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>
