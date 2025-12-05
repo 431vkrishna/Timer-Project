@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Countdown Alert Timer</title>
+    <title>Countdown Timer with Alert</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -59,7 +59,6 @@
 
         .input-group {
             margin-bottom: 2rem;
-            position: relative;
         }
 
         input {
@@ -130,7 +129,7 @@
         }
 
         .finished {
-            color: #ff3366;
+            color: var(--danger);
             font-weight: 600;
             animation: pulse 1s infinite;
         }
@@ -140,23 +139,10 @@
             50% { opacity: 0.7; }
         }
 
-        footer {
-            margin-top: 3rem;
-            font-size: 0.9rem;
-            color: var(--text-light);
-            opacity: 0.8;
-        }
-
         @media (max-width: 480px) {
-            .container {
-                padding: 2rem 1.5rem;
-            }
-            h1 {
-                font-size: 1.9rem;
-            }
-            .timer-display {
-                font-size: 3.8rem;
-            }
+            .container { padding: 2rem 1.5rem; }
+            h1 { font-size: 1.9rem; }
+            .timer-display { font-size: 3.8rem; }
         }
     </style>
 </head>
@@ -164,7 +150,7 @@
 
     <div class="container">
         <h1>Countdown Timer</h1>
-        <p>Enter seconds and start the timer</p>
+        <p>Enter seconds and start the countdown</p>
 
         <div class="input-group">
             <input type="number" id="secondsInput" placeholder="60" min="1" max="3600">
@@ -174,8 +160,6 @@
 
         <div class="timer-display" id="display">00:00</div>
         <div class="status" id="status"></div>
-
-        <footer>Made with <span style="color:#ff3366">♥</span> using Web APIs</footer>
     </div>
 
     <script>
@@ -186,10 +170,9 @@
 
         let countdown;
         let totalSeconds = 0;
-        let alertSound;
 
-        const beep = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
-        beep.volume = 0.7;
+        const alertSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBq7X2+Pk6fLm8fb1/Pn7/f3+9/g=');
+alertSound.volume = 1.0;
 
         function formatTime(seconds) {
             const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -201,29 +184,30 @@
             if (Notification.permission === "granted") {
                 new Notification("Timer Finished!", {
                     body: "Your countdown has reached zero.",
-                    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2300d4ff'/></svg>"
+                    icon: "https://cdn-icons-png.flaticon.com/128/1790/1790993.png",
+                    badge: "https://cdn-icons-png.flaticon.com/128/1790/1790993.png"
                 });
             }
         }
 
         function playAlert() {
-            beep.currentTime = 0;
-            beep.play().catch(() => {});
+            alertSound.currentTime = 0;
+            alertSound.play();
         }
 
         function startTimer() {
             if (countdown) clearInterval(countdown);
 
-            const inputVal = parseInt(input.value);
-            if (!inputVal || inputVal <= 0) {
-                status.textContent = "Please enter a valid number of seconds";
+            const value = parseInt(input.value);
+            if (!value || value <= 0) {
+                status.textContent = "Please enter a valid number";
                 status.style.color = "var(--danger)";
                 return;
             }
 
-            totalSeconds = inputVal;
+            totalSeconds = value;
             display.textContent = formatTime(totalSeconds);
-            status.textContent = "Timer running...";
+            status.textContent = "Timer is running...";
             status.style.color = "var(--text-light)";
             startBtn.textContent = "Stop Timer";
             startBtn.style.background = "linear-gradient(135deg, #ff3366, #cc0033)";
@@ -235,8 +219,9 @@
 
                 if (totalSeconds <= 0) {
                     clearInterval(countdown);
+                    countdown = null;
                     display.textContent = "00:00";
-                    status.textContent = "Timer finished!";
+                    status.textContent = "Time's up!";
                     status.classList.add("finished");
                     startBtn.textContent = "Start Again";
                     startBtn.style.background = "linear-gradient(135deg, var(--accent), #0099cc)";
@@ -261,17 +246,11 @@
         }
 
         startBtn.addEventListener('click', () => {
-            if (countdown) {
-                stopTimer();
-            } else {
-                startTimer();
-            }
+            countdown ? stopTimer() : startTimer();
         });
 
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !countdown) {
-                startTimer();
-            }
+        input.addEventListener('keypress', e => {
+            if (e.key === 'Enter' && !countdown) startTimer();
         });
 
         if (Notification.permission === "default") {
